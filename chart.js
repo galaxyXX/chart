@@ -437,20 +437,19 @@ window.Chart = function (container, options) {
                 "stroke": config.scaleLineColor,
                 "stroke-width": config.scaleLineWidth
             });
-
+            var font = config.scaleFontStyle + " " + config.scaleFontSize + "px " + config.scaleFontFamily;
             var txt = {
-                "font": config.scaleFontStyle + " " + config.scaleFontSize + "px " + config.scaleFontFamily,
-                "fill": config.scaleFontColor
+                "font": font
             };
             for (var i = 0; i < data.labels.length; i++) {
                 if (rotateLabels > 0) {
                     var transform = [
-                        ["T", yAxisPosX + i * valueHop, xAxisPosY + config.scaleFontSize],
+                        ["T", yAxisPosX + i * valueHop, xAxisPosY + labelHeight],
                         ["r", -rotateLabels]
                     ];
                     paper.text(0, 0, data.labels[i]).transform(transform.join(",")).attr(txt);
                 } else {
-                    paper.text(yAxisPosX + i * valueHop, xAxisPosY + config.scaleFontSize + 3, data.labels[i]).attr(txt);
+                    paper.text(yAxisPosX + i * valueHop, xAxisPosY + labelHeight + 3, data.labels[i]).attr(txt);
                 }
 
                 var xscalepath = [
@@ -499,12 +498,15 @@ window.Chart = function (container, options) {
 
         function calculateXAxisSize() {
             var longestText = 1;
+			var heightestText = 1;
             //if we are showing the labels in Y axis
             var font = config.scaleFontStyle + " " + config.scaleFontSize + "px " + config.scaleFontFamily;
             if (config.scaleShowLabels) {
                 for (var i = 0; i < calculatedScale.labels.length; i++) {
-                    var measuredText = measureTextWidthOrHeight(calculatedScale.labels[i], "width", font);
-                    longestText = (measuredText > longestText) ? measuredText : longestText;
+                    var measuredWText = measureTextWidthOrHeight(calculatedScale.labels[i], "width", font);
+					var measuredHText = measureTextWidthOrHeight(calculatedScale.labels[i], "height", font);
+                    longestText = (measuredWText > longestText) ? measuredWText : longestText;
+					heightestText = (measuredHText > heightestText) ? measuredHText : heightestText;
                 }
                 //Add a little extra padding from the y axis
                 longestText += 10;
@@ -513,20 +515,22 @@ window.Chart = function (container, options) {
             valueHop = Math.floor(xAxisLength / (data.labels.length - 1));
 
             yAxisPosX = width - widestXLabel / 2 - xAxisLength;
-            xAxisPosY = scaleHeight + config.scaleFontSize / 2;
+            xAxisPosY = scaleHeight + heightestText / 2;
         }
 
         function calculateDrawingSizes() {
             maxSize = height;
-            labelHeight = config.scaleFontSize;
 
             //Need to check the X axis first - measure the length of each text metric, and figure out if we need to rotate by 45 degrees.
+            labelHeight = 1;
             widestXLabel = 1;
             var font = config.scaleFontStyle + " " + config.scaleFontSize + "px " + config.scaleFontFamily;
             for (var i = 0; i < data.labels.length; i++) {
                 var textLength = measureTextWidthOrHeight(data.labels[i], "width", font);
+				var textHeight = measureTextWidthOrHeight(data.labels[i], "height", font);
                 //If the text length is longer - make that equal to longest text!
                 widestXLabel = (textLength > widestXLabel) ? textLength : widestXLabel;
+				labelHeight = (textHeight > labelHeight) ? textHeight : labelHeight;
             }
             if (width / data.labels.length < widestXLabel) {
                 rotateLabels = 45;
@@ -537,17 +541,14 @@ window.Chart = function (container, options) {
                     maxSize -= Math.sin(rotateLabels) * widestXLabel;
                 }
             } else {
-                maxSize -= config.scaleFontSize;
+                maxSize -= labelHeight;//config.scaleFontSize;
             }
             maxSize -= 5;
-            labelHeight = config.scaleFontSize;
             maxSize -= labelHeight;
             scaleHeight = maxSize;
-            //Then get the area above we can safely draw on.
         }
 
         //获取Y轴值边界
-
         function getValueBounds() {
             var upperValue = Number.MIN_VALUE;
             var lowerValue = Number.MAX_VALUE;
@@ -573,47 +574,46 @@ window.Chart = function (container, options) {
                 minSteps: minSteps
             };
         }
-    }
+    };
 
     //help function
+    function calculateOffset(val, calculatedScale, scaleHop) {
+        var outerValue = calculatedScale.steps * calculatedScale.stepValue;
+        var adjustedValue = val - calculatedScale.graphMin;
+        var scalingFactor = CapValue(adjustedValue / outerValue, 1, 0);
+        return (scaleHop * calculatedScale.steps) * scalingFactor;
+    }
 
-        function calculateOffset(val, calculatedScale, scaleHop) {
-            var outerValue = calculatedScale.steps * calculatedScale.stepValue;
-            var adjustedValue = val - calculatedScale.graphMin;
-            var scalingFactor = CapValue(adjustedValue / outerValue, 1, 0);
-            return (scaleHop * calculatedScale.steps) * scalingFactor;
-        }
+    function animationLoop(config, drawScale, drawData, paper) {
+        var animFrameAmount = (config.animation) ? 1 / CapValue(config.animationSteps, Number.MAX_VALUE, 1) : 1,
+            easingFunction = animationOptions[config.animationEasing],
+            percentAnimComplete = (config.animation) ? 0 : 1;
 
-        function animationLoop(config, drawScale, drawData, paper) {
-            var animFrameAmount = (config.animation) ? 1 / CapValue(config.animationSteps, Number.MAX_VALUE, 1) : 1,
-                easingFunction = animationOptions[config.animationEasing],
-                percentAnimComplete = (config.animation) ? 0 : 1;
+        if (typeof drawScale !== "function") drawScale = function () {};
+        requestAnimFrame(animLoop);
 
-            if (typeof drawScale !== "function") drawScale = function () {};
-            requestAnimFrame(animLoop);
-
-            function animateFrame() {
-                var easeAdjustedAnimationPercent = (config.animation) ? CapValue(easingFunction(percentAnimComplete), null, 0) : 1;
-                paper.clear();
-                if (config.scaleOverlay) {
-                    drawData(easeAdjustedAnimationPercent);
-                    drawScale();
-                } else {
-                    drawScale();
-                    drawData(easeAdjustedAnimationPercent);
-                }
-            }
-
-            function animLoop() {
-                percentAnimComplete += animFrameAmount;
-                animateFrame();
-                if (percentAnimComplete <= 1) {
-                    requestAnimFrame(animLoop);
-                } else {
-                    if (typeof config.onAnimationComplete == "function") config.onAnimationComplete();
-                }
+        function animateFrame() {
+            var easeAdjustedAnimationPercent = (config.animation) ? CapValue(easingFunction(percentAnimComplete), null, 0) : 1;
+            paper.clear();
+            if (config.scaleOverlay) {
+                drawData(easeAdjustedAnimationPercent);
+                drawScale();
+            } else {
+                drawScale();
+                drawData(easeAdjustedAnimationPercent);
             }
         }
+
+        function animLoop() {
+            percentAnimComplete += animFrameAmount;
+            animateFrame();
+            if (percentAnimComplete <= 1) {
+                requestAnimFrame(animLoop);
+            } else {
+                if (typeof config.onAnimationComplete == "function") config.onAnimationComplete();
+            }
+        }
+    }
 
     var requestAnimFrame = (function () {
         return window.requestAnimationFrame ||
@@ -638,17 +638,11 @@ window.Chart = function (container, options) {
             decimalNum;
         valueRange = maxValue - minValue;
         rangeOrderOfMagnitude = calculateOrderOfMagnitude(valueRange);
-
         graphMin = Math.floor(minValue / (1 * Math.pow(10, rangeOrderOfMagnitude))) * Math.pow(10, rangeOrderOfMagnitude);
-
         graphMax = Math.ceil(maxValue / (1 * Math.pow(10, rangeOrderOfMagnitude))) * Math.pow(10, rangeOrderOfMagnitude);
-
         graphRange = graphMax - graphMin;
-
         stepValue = Math.pow(10, rangeOrderOfMagnitude);
-
         numberOfSteps = Math.round(graphRange / stepValue);
-
         //Compare number of steps to the max and min for that size graph, and add in half steps if need be.	        
         while (numberOfSteps < minSteps || numberOfSteps > maxSteps) {
             if (numberOfSteps < minSteps) {
@@ -659,25 +653,19 @@ window.Chart = function (container, options) {
                 numberOfSteps = Math.round(graphRange / stepValue);
             }
         };
-
         var labels = [];
         populateLabels(labelTemplateString, labels, numberOfSteps, graphMin, stepValue);
-
         return {
             steps: numberOfSteps,
             stepValue: stepValue,
             graphMin: graphMin,
             labels: labels
-
         }
 
         //10为底，val的对数，向下取整
-
         function calculateOrderOfMagnitude(val) {
             return Math.floor(Math.log(val) / Math.LN10);
         }
-
-
     }
 
     //Populate an array of all the labels by interpolating the string.
@@ -692,7 +680,6 @@ window.Chart = function (container, options) {
             }
         }
     }
-
 
     //Max value from array
 
