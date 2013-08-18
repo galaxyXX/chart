@@ -498,15 +498,15 @@ window.Chart = function (container, options) {
 
         function calculateXAxisSize() {
             var longestText = 1;
-			var heightestText = 1;
+            var heightestText = 1;
             //if we are showing the labels in Y axis
             var font = config.scaleFontStyle + " " + config.scaleFontSize + "px " + config.scaleFontFamily;
             if (config.scaleShowLabels) {
                 for (var i = 0; i < calculatedScale.labels.length; i++) {
                     var measuredWText = measureTextWidthOrHeight(calculatedScale.labels[i], "width", font);
-					var measuredHText = measureTextWidthOrHeight(calculatedScale.labels[i], "height", font);
+                    var measuredHText = measureTextWidthOrHeight(calculatedScale.labels[i], "height", font);
                     longestText = (measuredWText > longestText) ? measuredWText : longestText;
-					heightestText = (measuredHText > heightestText) ? measuredHText : heightestText;
+                    heightestText = (measuredHText > heightestText) ? measuredHText : heightestText;
                 }
                 //Add a little extra padding from the y axis
                 longestText += 10;
@@ -527,10 +527,10 @@ window.Chart = function (container, options) {
             var font = config.scaleFontStyle + " " + config.scaleFontSize + "px " + config.scaleFontFamily;
             for (var i = 0; i < data.labels.length; i++) {
                 var textLength = measureTextWidthOrHeight(data.labels[i], "width", font);
-				var textHeight = measureTextWidthOrHeight(data.labels[i], "height", font);
+                var textHeight = measureTextWidthOrHeight(data.labels[i], "height", font);
                 //If the text length is longer - make that equal to longest text!
                 widestXLabel = (textLength > widestXLabel) ? textLength : widestXLabel;
-				labelHeight = (textHeight > labelHeight) ? textHeight : labelHeight;
+                labelHeight = (textHeight > labelHeight) ? textHeight : labelHeight;
             }
             if (width / data.labels.length < widestXLabel) {
                 rotateLabels = 45;
@@ -541,7 +541,7 @@ window.Chart = function (container, options) {
                     maxSize -= Math.sin(rotateLabels) * widestXLabel;
                 }
             } else {
-                maxSize -= labelHeight;//config.scaleFontSize;
+                maxSize -= labelHeight; //config.scaleFontSize;
             }
             maxSize -= 5;
             maxSize -= labelHeight;
@@ -549,6 +549,7 @@ window.Chart = function (container, options) {
         }
 
         //获取Y轴值边界
+
         function getValueBounds() {
             var upperValue = Number.MIN_VALUE;
             var lowerValue = Number.MAX_VALUE;
@@ -577,6 +578,7 @@ window.Chart = function (container, options) {
     };
 
     //help function
+
     function calculateOffset(val, calculatedScale, scaleHop) {
         var outerValue = calculatedScale.steps * calculatedScale.stepValue;
         var adjustedValue = val - calculatedScale.graphMin;
@@ -663,6 +665,7 @@ window.Chart = function (container, options) {
         }
 
         //10为底，val的对数，向下取整
+
         function calculateOrderOfMagnitude(val) {
             return Math.floor(Math.log(val) / Math.LN10);
         }
