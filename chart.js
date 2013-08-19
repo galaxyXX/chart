@@ -380,9 +380,13 @@ window.Chart = function (container, options) {
 
         function drawLines(animPc) {
             for (var i = 0; i < data.datasets.length; i++) {
+                var attr = {
+                    "stroke": data.datasets[i].strokeColor,
+                    "stroke-width": config.datasetStrokeWidth
+                };
                 var path = [
                     ["M", yAxisPosX, xAxisPosY - animPc * (calculateOffset(data.datasets[i].data[0], calculatedScale, scaleHop))]
-                ]
+                ];
                 for (var j = 1; j < data.datasets[i].data.length; j++) {
                     if (config.bezierCurve) {
                         path = path.concat(["C", xPos(j - 0.5), yPos(i, j - 1), xPos(j - 0.5), yPos(i, j), xPos(j), yPos(i, j)]);
@@ -397,13 +401,9 @@ window.Chart = function (container, options) {
                         ["z"]
                     ];
                     path = path.concat(pathfill);
+                    attr = mergeChartConfig(attr, {"fill": data.datasets[i].fillColor});
                 }
-                var line = paper.path(path.join(","));
-                line.attr({
-                    "stroke": data.datasets[i].strokeColor,
-                    "stroke-width": config.datasetStrokeWidth,
-                    "fill": data.datasets[i].fillColor
-                });
+                var line = paper.path(path.join(",")).attr(attr);
                 if (config.pointDot) {
                     for (var k = 0; k < data.datasets[i].data.length; k++) {
                         var c = paper.circle(yAxisPosX + (valueHop * k),
