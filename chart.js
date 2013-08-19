@@ -779,7 +779,7 @@ window.Chart = function (container, options) {
     function measureTextWidthOrHeight(text, name, font) {
         var span = document.createElement("span");
         span.style.visibility = "hidden";
-        span.style.font = "Arial, normal, 12px";
+        span.style.font = font;
         var txt = document.createTextNode(text);
         span.appendChild(txt);
         document.body.appendChild(span);
