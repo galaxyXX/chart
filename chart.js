@@ -269,14 +269,26 @@ window.Chart = function (container, options) {
         }
         paper.customAttributes.sectorSegment = function (x, y, r, a1, a2) {
             var flag = (a2 - a1) > Math.PI;
-            return {
-                path: [
-                    ["M", x, y],
-                    ["l", r * Math.cos(a1), r * Math.sin(a1)],
-                    ["A", r, r, 0, +flag, 1, x + r * Math.cos(a2), y + r * Math.sin(a2)],
-                    ["z"]
-                ],
-            };
+			if(!flag) {
+				return {
+					path: [
+						["M", x, y],
+						["l", r * Math.cos(a1), r * Math.sin(a1)],
+						["A", r, r, 0, +flag, 1, x + r * Math.cos(a2), y + r * Math.sin(a2)],
+						["z"]
+					],
+				};
+			}
+			else {
+				return {
+					path: [
+						["M", x, y],
+						["l", r * Math.cos(a1), r * Math.sin(a1)],
+						["A", r, r, 1, +flag, 1, x + r * Math.cos(a2), y + r * Math.sin(a2)],
+						["z"]
+					],
+				};
+			}
         };
     }
 
